@@ -8,4 +8,4 @@ echo $version
 gradle assemble -PVersion=$version
 mkdir ../music-repo-war
 cp build/libs/*.war ../music-repo-war
-ls build/libs/
+echo `ls build/libs/`
