@@ -10,4 +10,4 @@ outputs:
   - name: music-repo
   
 run:
-  path: music-repo1/ci/tasks/build-artifact.sh
+  path: music-repo/ci/tasks/build-artifact.sh
