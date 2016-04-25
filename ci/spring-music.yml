@@ -2,14 +2,13 @@ resources:
 - name: music-repo
   type: git
   source:
-    uri: git@github.com:datianshi/spring-music.git
+    uri: git@github.com:rsamban/concourse-spring-music.git
     branch: master
-    private_key: {{music_private_key}}
-
+    private_key: {{music-private-key}}
 - name: version
   type: semver
   source:
-    bucket: music-pipeline-artifacts
+    bucket: ramesh-sm
     key: current-version
     access_key_id: {{s3-access-key-id}}
     secret_access_key: {{s3-secret-access-key}}
@@ -18,7 +17,7 @@ resources:
 - name: music-release
   type: s3
   source:
-    bucket: music-pipeline-artifacts
+    bucket: ramesh-sm
     regexp: spring-music-(.*).war
     access_key_id: {{s3-access-key-id}}
     secret_access_key: {{s3-secret-access-key}}
@@ -43,74 +42,5 @@ jobs:
     file: music-repo/ci/tasks/build-artifact.yml
     timeout: 5m
   - put: music-release
-    params: {from: music-repo/build/libs/spring-music-.*.war}
-  - put: music-repo
-    params:
-      repository: music-repo
-      tag: version/number
-  - put: version
-    params: {file: version/number}
-
-- name: acceptance-tests
-  plan:
-  - aggregate:
-    - get: music-release
-      passed: [build-binary]
-      trigger: true
-    - get: music-repo
-      passed: [build-binary]
-      trigger: true
-  - task: deploy-to-cats
-    file: music-repo/ci/tasks/cf-deployment.yml
-    config:
-      params:
-        API_ENDPOINT: api.10.65.233.228.xip.io
-        USERNAME: admin
-        PASSWORD: admin
-        ORG: test-org
-        SPACE: cats
-        HOST: music-cats
-  - task: cats
-    file: music-repo/ci/tasks/cats.yml
-    config:
-      params:
-        MUSIC_URL: http://music-cats.10.65.233.228.xip.io
-
-- name: promote-to-uat
-  plan:
-  - aggregate:
-    - get: music-release
-      passed: [acceptance-tests]
-      trigger: true
-    - get: music-repo
-      passed: [acceptance-tests]
-      trigger: true
-  - task: deploy-to-uat
-    file: music-repo/ci/tasks/cf-deployment.yml
-    config:
-      params:
-        API_ENDPOINT: api.10.65.233.228.xip.io
-        USERNAME: admin
-        PASSWORD: admin
-        ORG: test-org
-        SPACE: uat
-        HOST: music-uat
-
-- name: manual-deploy-to-prod
-  serial: true
-  plan:
-  - aggregate:
-    - get: music-release
-      passed: [promote-to-uat]
-    - get: music-repo
-      passed: [promote-to-uat]
-  - task: deploy-to-prod
-    file: music-repo/ci/tasks/cf-deployment.yml
-    config:
-      params:
-        API_ENDPOINT: api.10.65.233.228.xip.io
-        USERNAME: admin
-        PASSWORD: admin
-        ORG: test-org
-        SPACE: prod
-        HOST: music
+    params: 
+      file: music-repo/build/libs/spring-music-*.war
